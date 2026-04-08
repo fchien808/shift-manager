@@ -40,7 +40,35 @@ import { generateImagesForCampaign } from "@/workers/image-gen";
 import { synthesizeWorker } from "./synthesizer";
 import { planShift } from "./planner";
 
-const MAX_RETRIES = 1;
+const MAX_RETRIES = 4;
+const BASE_BACKOFF_MS = 2000;
+
+// Errors we should always retry — transient API issues, not bad inputs.
+function isRetryableError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes("529") ||
+    msg.includes("overloaded") ||
+    msg.includes("Overloaded") ||
+    msg.includes("rate_limit") ||
+    msg.includes("rate limit") ||
+    msg.includes("429") ||
+    msg.includes("500") ||
+    msg.includes("502") ||
+    msg.includes("503") ||
+    msg.includes("504") ||
+    msg.includes("ETIMEDOUT") ||
+    msg.includes("ECONNRESET") ||
+    msg.includes("fetch failed")
+  );
+}
+
+function backoffDelay(attempt: number): number {
+  // Exponential backoff with jitter: 2s, 4s, 8s, 16s (+ up to 1s jitter)
+  return BASE_BACKOFF_MS * Math.pow(2, attempt) + Math.floor(Math.random() * 1000);
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export interface RunShiftOptions {
   shiftId: string;
@@ -539,12 +567,21 @@ async function executeTask(
       return { result, output };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
+      const retryable = isRetryableError(lastError);
+      // Non-retryable errors (validation, schema mismatches) bail immediately —
+      // no point burning more API calls. Retryable transient errors get the
+      // full backoff schedule.
+      if (!retryable) {
+        break;
+      }
       if (attempt < MAX_RETRIES) {
+        const delay = backoffDelay(attempt);
         onEvent({
           type: "task_retrying",
           taskId: task.id,
-          reason: lastError.message.slice(0, 200),
+          reason: `${lastError.message.slice(0, 160)} · backing off ${Math.round(delay / 1000)}s`,
         });
+        await sleep(delay);
       }
     }
   }
