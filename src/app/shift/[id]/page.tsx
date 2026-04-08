@@ -34,6 +34,7 @@ export default function ShiftPage({ params }: { params: { id: string } }) {
   const [log, setLog] = useState<LogLine[]>([]);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  const [plannerThought, setPlannerThought] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(Date.now());
 
@@ -107,6 +108,9 @@ export default function ShiftPage({ params }: { params: { id: string } }) {
         break;
       }
       case "task_progress": {
+        if (ev.taskId === "__planning__") {
+          setPlannerThought(ev.message);
+        }
         appendLog("…", `${ev.taskId}: ${ev.message}`);
         break;
       }
@@ -186,7 +190,7 @@ export default function ShiftPage({ params }: { params: { id: string } }) {
         <div>
           <h1>Shift in progress</h1>
           <div className="goal">
-            {plan?.goal ?? "Opus planner is decomposing the shift…"}
+            {plan?.goal ?? (plannerThought ?? "Opus planner is decomposing the shift…")}
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -220,7 +224,8 @@ export default function ShiftPage({ params }: { params: { id: string } }) {
             <h2>Worker Lanes</h2>
             {!plan && (
               <div style={{ color: "var(--muted)", padding: "12px 0" }}>
-                Planner is running…
+                <span className="planner-pulse">●</span>{" "}
+                {plannerThought ?? "Planner is running…"}
               </div>
             )}
             {orderedTasks.map((t) => {

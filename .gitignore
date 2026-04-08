@@ -6,3 +6,4 @@ artifacts/shift-*
 data/
 *.log
 .DS_Store
+.vercel

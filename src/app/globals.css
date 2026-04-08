@@ -554,3 +554,13 @@ textarea.proposal:focus {
   margin-bottom: 16px;
   font-size: 13px;
 }
+
+.planner-pulse {
+  display: inline-block;
+  color: var(--accent, #e67e22);
+  animation: planner-pulse 1.4s ease-in-out infinite;
+}
+@keyframes planner-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}

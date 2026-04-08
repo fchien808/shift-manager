@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { shiftStore, loadPersistedRecord } from "@/lib/shift-store";
+import { getStore } from "@/lib/store";
 import { summarizeCost } from "@/orchestrator/supervisor";
 
 export const runtime = "nodejs";
@@ -9,8 +9,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const liveRec = shiftStore.get(params.id);
-  const rec = liveRec ?? loadPersistedRecord(params.id);
+  const store = getStore();
+  const rec = await store.getShift(params.id);
   if (!rec) {
     return NextResponse.json({ error: "Shift not found" }, { status: 404 });
   }
