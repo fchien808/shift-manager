@@ -330,6 +330,7 @@ export async function planShift(
   });
 
   const artifactIds = new Set(artifacts.map((a) => a.id));
+  repairPlanDeps(tasks);
   validatePlan(tasks, artifactIds);
 
   // Deterministically append the assembly task. It depends on every LLM
@@ -376,6 +377,22 @@ function sanitizeCapabilityGaps(raw: CapabilityGap[] | undefined): CapabilityGap
       reasonNoExistingFit: g.reasonNoExistingFit,
       placedAfter: g.placedAfter,
     }));
+}
+
+// Auto-repair: if an input binding references a task that isn't in dependsOn,
+// add it. The planner LLM occasionally forgets to mirror input.taskId into deps,
+// especially when adding extra tasks (GTM, market research, etc.).
+function repairPlanDeps(tasks: PlannedTask[]): void {
+  const ids = new Set(tasks.map((t) => t.id));
+  for (const t of tasks) {
+    for (const binding of Object.values(t.inputs)) {
+      if (binding.kind === "task" || binding.kind === "task_field") {
+        if (ids.has(binding.taskId) && !t.dependsOn.includes(binding.taskId)) {
+          t.dependsOn.push(binding.taskId);
+        }
+      }
+    }
+  }
 }
 
 function validatePlan(tasks: PlannedTask[], artifactIds: Set<string> = new Set()): void {
