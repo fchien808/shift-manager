@@ -51,24 +51,53 @@ interface ShiftBlob {
   error?: string;
 }
 
-function buildRedis(): Redis {
-  // Prefer explicit UPSTASH_* vars; fall back to Vercel KV's KV_REST_API_* vars.
-  const url =
-    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
-  const token =
-    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
-  if (!url || !token) {
-    throw new Error(
-      "RedisStore requires UPSTASH_REDIS_REST_URL/TOKEN or KV_REST_API_URL/TOKEN env vars"
-    );
+/**
+ * Parse a Redis TCP connection string (rediss://default:TOKEN@host.upstash.io:6379)
+ * into the REST URL + token that @upstash/redis needs.
+ * Upstash REST endpoint is simply https://<host> with the password as the token.
+ */
+function parseRedisUrl(redisUrl: string): { url: string; token: string } | null {
+  try {
+    const parsed = new URL(redisUrl);
+    const token = parsed.password;
+    const host = parsed.hostname;
+    if (!token || !host) return null;
+    return { url: `https://${host}`, token };
+  } catch {
+    return null;
   }
-  return new Redis({ url, token });
+}
+
+function buildRedis(): Redis {
+  // 1. Explicit Upstash REST vars (set manually or via Upstash Vercel integration)
+  const restUrl =
+    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const restToken =
+    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+  if (restUrl && restToken) {
+    return new Redis({ url: restUrl, token: restToken });
+  }
+
+  // 2. Vercel Redis integration injects REDIS_URL as a TCP connection string.
+  //    Parse it to derive the Upstash REST endpoint.
+  const redisUrl = process.env.REDIS_URL;
+  if (redisUrl) {
+    const parsed = parseRedisUrl(redisUrl);
+    if (parsed) {
+      return new Redis({ url: parsed.url, token: parsed.token });
+    }
+  }
+
+  throw new Error(
+    "RedisStore requires UPSTASH_REDIS_REST_URL/TOKEN, KV_REST_API_URL/TOKEN, or REDIS_URL env vars"
+  );
 }
 
 export function redisConfigured(): boolean {
   return Boolean(
-    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
-      (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+    ((process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+      (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)) ||
+    process.env.REDIS_URL
   );
 }
 

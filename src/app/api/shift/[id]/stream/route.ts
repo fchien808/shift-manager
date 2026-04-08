@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Hold the SSE connection open for the full duration of a long shift.
 // Matches the POST route's maxDuration so the live view survives a 3-4min run.
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 /**
  * Server-sent events stream for a running shift.

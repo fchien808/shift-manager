@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Vercel Pro allows up to 300s. A full shift with synthesis + re-plan can
 // push 3-4 minutes, so we max it out.
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
