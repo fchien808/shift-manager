@@ -275,13 +275,87 @@ export async function runWorker(
     }
   }
 
+  // If validation still fails on missing required properties, make one
+  // targeted retry call that tells the model exactly which keys it forgot.
+  // Much cheaper and more reliable than failing the whole task — this is
+  // the single most common failure mode for synthesized workers whose
+  // output schemas tend to be ambitious about required fields.
+  let retryUsage: TokenUsage | undefined;
+  if (!outputValidator(output)) {
+    const missing = extractMissingRequired(outputValidator.errors);
+    if (missing.length > 0) {
+      console.warn(
+        `[runtime] ${spec.id} missing required keys ${JSON.stringify(missing)}, retrying once with corrective feedback`
+      );
+      const corrective = `Your previous response was missing these required fields: ${missing.join(", ")}.
+
+Return the SAME response as a single JSON object with ALL required fields present, including the ones above. Return ONLY raw JSON — first char "{", last char "}", no prose, no code fences.
+
+Required output shape (from the worker's output schema):
+${JSON.stringify(spec.outputSchema, null, 2)}`;
+      const retry = await callModel({
+        tier: spec.tier,
+        system: spec.systemPrompt,
+        messages: [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: result.text },
+          { role: "user", content: corrective },
+        ],
+        maxTokens: spec.maxTokens,
+        temperature: spec.temperature,
+      });
+      retryUsage = retry.usage;
+      try {
+        const retriedOutput = extractJson(retry.text);
+        if (outputValidator(retriedOutput)) {
+          output = retriedOutput;
+        } else if (
+          retriedOutput &&
+          typeof retriedOutput === "object" &&
+          !Array.isArray(retriedOutput)
+        ) {
+          const keys = Object.keys(retriedOutput as Record<string, unknown>);
+          if (keys.length === 1) {
+            const inner = (retriedOutput as Record<string, unknown>)[keys[0]];
+            if (outputValidator(inner)) output = inner;
+          }
+        }
+      } catch {
+        // fall through to the validation error below
+      }
+    }
+  }
+
   if (!outputValidator(output)) {
     throw new Error(
       `Worker ${spec.id} output failed validation: ${ajv.errorsText(outputValidator.errors)}`
     );
   }
 
-  return { output, usage: result.usage };
+  const usage = retryUsage
+    ? {
+        tier: result.usage.tier,
+        inputTokens: result.usage.inputTokens + retryUsage.inputTokens,
+        outputTokens: result.usage.outputTokens + retryUsage.outputTokens,
+        costUsd: result.usage.costUsd + retryUsage.costUsd,
+      }
+    : result.usage;
+
+  return { output, usage };
+}
+
+function extractMissingRequired(errors: unknown): string[] {
+  if (!Array.isArray(errors)) return [];
+  const out: string[] = [];
+  for (const err of errors as Array<{
+    keyword?: string;
+    params?: { missingProperty?: string };
+  }>) {
+    if (err?.keyword === "required" && err.params?.missingProperty) {
+      out.push(err.params.missingProperty);
+    }
+  }
+  return out;
 }
 
 /**
