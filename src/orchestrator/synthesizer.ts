@@ -42,7 +42,7 @@ interface RawSynthesizedSpec {
 }
 
 function buildSynthesizerSystemPrompt(): string {
-  return `You are the Worker Synthesizer in Claude Shift Manager. Your job: design a brand-new WorkerSpec from a capability gap description so a generic runtime can execute it.
+  return `You are the Worker Synthesizer in Shift Manager. Your job: design a brand-new WorkerSpec from a capability gap description so a generic runtime can execute it.
 
 A WorkerSpec is a declarative worker definition: a system prompt, a user-message template with {{placeholders}}, a JSON Schema for inputs, and a JSON Schema for structured output. A generic runtime renders the template with resolved inputs, calls the model, validates the output against outputSchema, and hands the result to downstream workers.
 

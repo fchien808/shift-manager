@@ -37,7 +37,7 @@ function buildPlannerSystemPrompt(): string {
   const catalog = workerRegistry.catalogForPlanner();
   const catalogJson = JSON.stringify(catalog, null, 2);
 
-  return `You are the Supervisor agent in Claude Shift Manager, a multi-agent system for async knowledge work delegation. Your job right now is to PLAN a shift.
+  return `You are the Supervisor agent in Shift Manager, a multi-agent system for async knowledge work delegation. Your job right now is to PLAN a shift.
 
 The user has provided a product proposal. You need to produce a structured work plan that generates a complete "Launch Kit" for that product. A Launch Kit consists of: a positioning brief, marketing copy, a single-file HTML landing page, a 3-platform social campaign, customer service docs, and a verification pass.
 
