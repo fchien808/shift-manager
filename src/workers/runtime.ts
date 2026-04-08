@@ -114,6 +114,83 @@ export function resolveInputs(
 }
 
 // ============================================================
+// Input coercion — bridge schema mismatches between workers
+// ============================================================
+
+/**
+ * Render an arbitrary JSON value into a compact, readable markdown-ish string
+ * suitable for dropping into a user message template. Keeps keys visible so
+ * downstream workers retain the semantic structure of the upstream output.
+ */
+function renderValueAsMarkdown(value: unknown, depth = 0): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        const rendered = renderValueAsMarkdown(item, depth + 1);
+        return rendered.includes("\n") ? `- ${rendered.replace(/\n/g, "\n  ")}` : `- ${rendered}`;
+      })
+      .join("\n");
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    return entries
+      .map(([k, v]) => {
+        const rendered = renderValueAsMarkdown(v, depth + 1);
+        if (rendered.includes("\n")) {
+          return `**${k}:**\n${rendered
+            .split("\n")
+            .map((l) => `  ${l}`)
+            .join("\n")}`;
+        }
+        return `**${k}:** ${rendered}`;
+      })
+      .join("\n");
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
+ * Walk an input object and coerce each field to the type declared in the
+ * worker's input schema. Currently handles the dominant failure mode: a
+ * downstream worker expects a string but received a structured object from
+ * its upstream binding. In that case we render the object as markdown.
+ *
+ * Non-string target types pass through untouched — if we ever need the
+ * inverse (e.g. expected object, got string), add it here.
+ */
+function coerceInputsToSchema(
+  inputs: Record<string, unknown>,
+  inputSchema: unknown
+): Record<string, unknown> {
+  const schema = inputSchema as {
+    properties?: Record<string, { type?: string | string[] }>;
+  } | null;
+  const props = schema?.properties;
+  if (!props) return inputs;
+
+  const out: Record<string, unknown> = { ...inputs };
+  for (const [key, propSchema] of Object.entries(props)) {
+    const value = out[key];
+    if (value == null) continue;
+    const type = propSchema?.type;
+    const expectedTypes = Array.isArray(type) ? type : type ? [type] : [];
+    const wantsString = expectedTypes.includes("string");
+    const isString = typeof value === "string";
+    if (wantsString && !isString) {
+      out[key] = renderValueAsMarkdown(value);
+    }
+  }
+  return out;
+}
+
+// ============================================================
 // HTML extraction (for outputFormat: "html")
 // ============================================================
 
@@ -148,6 +225,14 @@ export async function runWorker(
   spec: WorkerSpec,
   resolvedInputs: Record<string, unknown>
 ): Promise<RunWorkerResult> {
+  // Coerce inputs to match the input schema before validation. This handles
+  // the common case where a synthesized worker declares an input as `string`
+  // but the upstream worker it's bound to emits a structured object. Rather
+  // than making the synthesizer clairvoyant about upstream output shapes, we
+  // stringify object/array values into readable markdown when the target is
+  // a string field. Safe and centralized — no other failure mode in play.
+  resolvedInputs = coerceInputsToSchema(resolvedInputs, spec.inputSchema);
+
   // Validate inputs
   const inputValidator = getValidator(`${spec.id}@${spec.version}:in`, spec.inputSchema);
   if (!inputValidator(resolvedInputs)) {
