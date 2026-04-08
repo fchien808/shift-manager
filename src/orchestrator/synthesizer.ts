@@ -1,3 +1,7 @@
+// TODO(roadmap #3): synthesizer should fire whenever a user-requested
+// deliverable has no matching worker — not only when the planner explicitly
+// flags a CapabilityGap. Tie this into the upcoming intent-capture step
+// (src/orchestrator/intent.ts). See TODO.md.
 /**
  * Worker synthesizer (Phase C).
  *

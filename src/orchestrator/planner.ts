@@ -395,6 +395,11 @@ function repairPlanDeps(tasks: PlannedTask[]): void {
   }
 }
 
+// TODO(roadmap #1): drop the launch-kit-specific assertions below (positioning
+// task required, fixed downstream worker list) so plans can produce arbitrary
+// deliverables. See TODO.md.
+// TODO(roadmap #3): also validate that every user-requested deliverable is
+// covered by some terminal task in the plan.
 function validatePlan(tasks: PlannedTask[], artifactIds: Set<string> = new Set()): void {
   const ids = new Set(tasks.map((t) => t.id));
 

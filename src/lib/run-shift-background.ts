@@ -5,6 +5,10 @@
  * clients then subscribe to /api/shift/[id]/stream for live events.
  */
 
+// TODO(roadmap #2): after each task completes, hand the artifact to any
+// matching Cowork connector (Webflow/LinkedIn/Notion/etc.) and push as a
+// DRAFT — never auto-publish. Surface push status in the event stream.
+// See TODO.md.
 import { planShift } from "@/orchestrator/planner";
 import { runShift } from "@/orchestrator/supervisor";
 import { getStore } from "./store";

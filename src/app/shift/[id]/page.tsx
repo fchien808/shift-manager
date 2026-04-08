@@ -100,9 +100,10 @@ export default function ShiftPage({ params }: { params: { id: string } }) {
           ...ls,
           [ev.taskId]: {
             ...ls[ev.taskId],
+            usage: ls[ev.taskId]?.usage ?? [],
             status: "running",
             startedAt: Date.now(),
-          },
+          } as LaneState,
         }));
         appendLog(`▶ ${ev.tier}`, `${ev.taskId} started`);
         break;
@@ -530,7 +531,7 @@ function Lane({ task, lane }: { task: PlannedTask; lane?: LaneState }) {
       : status === "failed"
       ? "failed"
       : "";
-  const usage = lane?.usage[0];
+  const usage = lane?.usage?.[0];
   const duration =
     lane?.startedAt && lane?.completedAt
       ? ((lane.completedAt - lane.startedAt) / 1000).toFixed(1) + "s"
@@ -595,7 +596,7 @@ function summarizeCost(lanes: Record<string, LaneState>) {
     haiku: { tokens: 0, cost: 0 },
   };
   for (const l of Object.values(lanes)) {
-    for (const u of l.usage) {
+    for (const u of l.usage ?? []) {
       byTier[u.tier].tokens += u.inputTokens + u.outputTokens;
       byTier[u.tier].cost += u.costUsd;
     }
