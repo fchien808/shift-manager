@@ -60,55 +60,143 @@ export default function LandingPage() {
         <div className="hero-grid-bg" />
         <div className="hero-glow" />
         <div className="hero-content">
-          <div className="hero-eyebrow">
-            <span className="hero-eyebrow-dot" />
-            Research preview · Tiered multi-agent orchestration
-          </div>
-          <h1 className="hero-headline">
-            Start the shift at midnight.
-            <br />
-            <span className="hero-headline-accent">
-              Review finished work at 8am.
-            </span>
-          </h1>
-          <p className="hero-sub">
-            Shift Manager delegates a full work shift to a tiered team of Claude
-            agents — Opus plans, Sonnet workers execute in parallel, Haiku
-            verifies quality — and delivers a single report to your inbox while
-            you sleep. No babysitting. No browser tab left open.
-          </p>
-          <div className="hero-cta-row">
-            <a href="#start" className="btn btn-primary">
-              Start a shift
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-            <a href="#how-it-works" className="btn btn-ghost-light">
-              See how it works
-            </a>
-          </div>
-          <div className="hero-strip">
-            <span className="hero-strip-label">Built for teams who ship</span>
-            <div className="hero-strip-items">
-              <span>Founders</span>
-              <span className="dot-sep">·</span>
-              <span>Marketers</span>
-              <span className="dot-sep">·</span>
-              <span>Operators</span>
-              <span className="dot-sep">·</span>
-              <span>Growth Teams</span>
+          <div className="hero-left">
+            <div className="hero-eyebrow">
+              <span className="hero-eyebrow-dot" />
+              Research preview · Tiered multi-agent orchestration
+            </div>
+            <h1 className="hero-headline">
+              Start the shift at midnight.{" "}
+              <span className="hero-headline-accent">
+                Review finished work at 8am.
+              </span>
+            </h1>
+            <p className="hero-sub">
+              Hand off a full shift to a team of AI agents. Opus plans, Sonnet
+              workers execute in parallel, Haiku verifies. You get a finished
+              report — no babysitting, no browser tab left open.
+            </p>
+            <div className="hero-cta-row">
+              <a href="#start" className="btn btn-primary">
+                Start a shift
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+              <a href="#how-it-works" className="btn btn-ghost-light">
+                See how it works
+              </a>
             </div>
           </div>
+
+          {/* Shift Report preview card */}
+          <aside className="hero-preview" aria-hidden="true">
+            <div className="hero-preview-head">
+              <span className="hero-preview-title">Shift Report</span>
+              <span className="hero-preview-time">6:42 am</span>
+            </div>
+            <div className="hero-preview-cost-row">
+              <span>Launch Kit Generation</span>
+              <span className="hero-preview-cost-value">
+                <span className="now">$0.47</span>
+                <span className="old">$2.82</span>
+              </span>
+            </div>
+            <div className="hero-preview-items">
+              <div className="hero-preview-item">
+                <span className="check">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <span className="label">Positioning document</span>
+                <span className="tag">Sonnet-1</span>
+              </div>
+              <div className="hero-preview-item">
+                <span className="check">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <span className="label">Landing page copy</span>
+                <span className="tag">Sonnet-2</span>
+              </div>
+              <div className="hero-preview-item">
+                <span className="check">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <span className="label">Email sequence (5x)</span>
+                <span className="tag">Sonnet-3</span>
+              </div>
+              <div className="hero-preview-item">
+                <span className="check">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <span className="label">Social launch posts</span>
+                <span className="tag">Sonnet-4</span>
+              </div>
+            </div>
+            <div className="hero-preview-verify">
+              <span className="star">★</span>
+              <span>Verified by Haiku</span>
+              <span className="pass">4 of 4 passed</span>
+            </div>
+            <div className="hero-preview-bar" />
+            <div className="hero-preview-footer">
+              <span>☾ 12:00 am</span>
+              <span>agents working</span>
+              <span>6:42 am ☀</span>
+            </div>
+          </aside>
         </div>
       </section>
 
@@ -215,92 +303,98 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="pipeline">
-            <div className="pipeline-line" />
+            {/* Opus Planner */}
             <div className="pipeline-step pipeline-opus">
-              <div className="pipeline-bubble">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
-                </svg>
-              </div>
               <span className="pipeline-tag pipeline-tag-opus">
-                <span className="tabular">01</span> Opus Planner
+                Opus Planner
               </span>
               <h3>Decompose the goal</h3>
               <p>
-                Opus reads the registry of available workers, decomposes the
-                shift into a parallelizable DAG, and synthesizes new workers if
-                a capability gap exists.
+                Reads available workers, builds a parallelizable task graph,
+                synthesizes new workers if needed.
               </p>
               <code className="pipeline-code">goal → task_graph.json</code>
             </div>
-            <div className="pipeline-step pipeline-sonnet">
-              <div className="pipeline-bubble">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="3" width="6" height="6" rx="1" />
-                  <rect x="9" y="3" width="6" height="6" rx="1" />
-                  <rect x="16" y="3" width="6" height="6" rx="1" />
-                  <rect x="2" y="14" width="6" height="7" rx="1" />
-                  <rect x="9" y="14" width="6" height="7" rx="1" />
-                  <rect x="16" y="14" width="6" height="7" rx="1" />
-                </svg>
-              </div>
-              <span className="pipeline-tag pipeline-tag-sonnet">
-                <span className="tabular">02</span> Sonnet Workers
-              </span>
-              <h3>Execute in parallel</h3>
-              <p>
-                Multiple Sonnet workers run independent tasks simultaneously
-                against structured contracts. A 6-task shift takes the time of
-                its longest worker.
-              </p>
-              <code className="pipeline-code">tasks[0..n] → outputs[]</code>
+
+            <div className="pipeline-arrow" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
             </div>
-            <div className="pipeline-step pipeline-haiku">
-              <div className="pipeline-bubble">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <polyline points="9 12 11 14 15 10" />
-                </svg>
+
+            {/* Sonnet Workers — 2x2 grid */}
+            <div className="pipeline-sonnet-group">
+              <div className="pipeline-sonnet-title">Sonnet Workers</div>
+              <div className="worker-grid">
+                <div className="worker-card">
+                  <div className="worker-card-head">
+                    <span className="wid">worker-1</span>
+                    <span className="dur">2m 14s</span>
+                  </div>
+                  <div className="worker-card-title">Positioning doc</div>
+                  <div className="worker-card-bar" />
+                </div>
+                <div className="worker-card">
+                  <div className="worker-card-head">
+                    <span className="wid">worker-2</span>
+                    <span className="dur">1m 48s</span>
+                  </div>
+                  <div className="worker-card-title">Landing page</div>
+                  <div className="worker-card-bar" />
+                </div>
+                <div className="worker-card">
+                  <div className="worker-card-head">
+                    <span className="wid">worker-3</span>
+                    <span className="dur">2m 31s</span>
+                  </div>
+                  <div className="worker-card-title">Email sequence</div>
+                  <div className="worker-card-bar" />
+                </div>
+                <div className="worker-card">
+                  <div className="worker-card-head">
+                    <span className="wid">worker-4</span>
+                    <span className="dur">1m 12s</span>
+                  </div>
+                  <div className="worker-card-title">Social posts</div>
+                  <div className="worker-card-bar" />
+                </div>
               </div>
+              <div className="pipeline-sonnet-footer">
+                tasks run simultaneously — total time = longest worker
+              </div>
+            </div>
+
+            <div className="pipeline-arrow" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+
+            {/* Haiku Verifier */}
+            <div className="pipeline-step pipeline-haiku">
               <span className="pipeline-tag pipeline-tag-haiku">
-                <span className="tabular">03</span> Haiku Verifier
+                Haiku Verifier
               </span>
               <h3>Verify &amp; assemble</h3>
               <p>
-                Haiku checks every output for quality and brand consistency.
-                Passes get assembled into the shift report. Failures are
-                flagged with context — never silently dropped.
+                Checks every output for quality and consistency. Passes get
+                assembled; failures flagged with context.
               </p>
               <code className="pipeline-code">outputs[] → shift_report</code>
+            </div>
+
+            <div className="pipeline-arrow" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+
+            {/* Shift Report endpoint */}
+            <div className="pipeline-report">
+              <div className="pipeline-report-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="13" y2="17" />
+                </svg>
+              </div>
+              <h4>Shift Report</h4>
+              <div className="ready">ready at 6:42am</div>
             </div>
           </div>
         </div>
