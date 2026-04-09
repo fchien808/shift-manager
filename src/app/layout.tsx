@@ -51,7 +51,7 @@ export default function RootLayout({
             <div className="topnav-links">
               <Link href="/shifts">Shifts</Link>
               <Link href="/workers">Workers</Link>
-              <Link href="/#how-it-works">How it works</Link>
+              <Link href="/how-it-works">How it works</Link>
             </div>
           </div>
         </nav>
@@ -79,7 +79,7 @@ export default function RootLayout({
             <div className="footer-links">
               <Link href="/shifts">Shifts</Link>
               <Link href="/workers">Workers</Link>
-              <Link href="/#how-it-works">How it works</Link>
+              <Link href="/how-it-works">How it works</Link>
             </div>
             <p className="footer-meta">Tiered multi-agent orchestration · Research preview</p>
           </div>

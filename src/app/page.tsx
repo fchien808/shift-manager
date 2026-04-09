@@ -92,7 +92,7 @@ export default function LandingPage() {
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </a>
-              <a href="#how-it-works" className="btn btn-ghost-light">
+              <a href="/how-it-works" className="btn btn-ghost-light">
                 See how it works
               </a>
             </div>
