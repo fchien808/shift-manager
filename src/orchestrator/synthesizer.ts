@@ -21,6 +21,8 @@
  *   - re-planning after a draft is approved mid-shift
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { callModel, extractJson } from "./anthropic-client";
 import { workerRegistry } from "@/workers/registry";
 import type {
@@ -45,40 +47,28 @@ interface RawSynthesizedSpec {
   userTemplate: string;
 }
 
+// Load the synthesizer system prompt from a dedicated file so the rules that
+// govern how new workers are designed can be iterated on without touching TS.
+// This puts synthesized workers on equal footing with seeded workers, whose
+// prompts also live in versioned files. See prompts/synthesize-worker.md.
+const SYNTHESIZER_PROMPT_PATH = path.join(
+  process.cwd(),
+  "src/orchestrator/prompts/synthesize-worker.md"
+);
+
+let _synthesizerPromptCache: string | null = null;
 function buildSynthesizerSystemPrompt(): string {
-  return `You are the Worker Synthesizer in Shift Manager. Your job: design a brand-new WorkerSpec from a capability gap description so a generic runtime can execute it.
-
-A WorkerSpec is a declarative worker definition: a system prompt, a user-message template with {{placeholders}}, a JSON Schema for inputs, and a JSON Schema for structured output. A generic runtime renders the template with resolved inputs, calls the model, validates the output against outputSchema, and hands the result to downstream workers.
-
-HARD REQUIREMENTS
-- inputSchema MUST be a valid JSON Schema object with "type": "object", a "properties" map, and a "required" array. Keep inputs minimal and sharp — prefer 2-4 fields.
-- outputSchema MUST be a valid JSON Schema object with "type": "object", a "properties" map, and a "required" array. Every required field must be described in properties.
-- KEEP "required" MINIMAL on outputSchema. Only mark a field as required if the downstream pipeline absolutely cannot proceed without it. Prefer 1-2 required fields max — list every other field as optional in "properties" but NOT in "required". Models occasionally drop fields under load, and over-strict required arrays cause cascading task failures. It is much better to have a worker return a partial-but-validated output than to fail the whole shift.
-- userTemplate MUST reference every required input field as {{fieldName}}. Object/array values are stringified automatically.
-- systemPrompt MUST include an explicit "OUTPUT SHAPE" JSON template block showing the exact keys the worker should return, and a "do NOT wrap in an envelope" instruction. Return ONLY raw JSON — first char "{", last char "}".
-- Ban these marketing words in all prompts: revolutionary, seamlessly, unlock, harness, cutting-edge, leverage, empower.
-- Do NOT reference other workers, tools, or registries in the prompt. The worker only sees the rendered user message.
-
-OUTPUT FORMAT: Return ONLY a JSON object with this exact shape, no prose, no code fences:
-
-{
-  "id": "<kebab-case id matching proposedWorkerId>",
-  "name": "<short human-readable name>",
-  "description": "<one-liner the planner reads for capability matching>",
-  "purpose": "<2-3 sentence explanation of what the worker does and its inputs/outputs>",
-  "tags": ["<tag>", "<tag>"],
-  "maxTokens": <integer 500-4000>,
-  "temperature": <number 0.0-1.0>,
-  "inputSchema": { "type": "object", "properties": {...}, "required": [...] },
-  "outputSchema": { "type": "object", "properties": {...}, "required": [...] },
-  "outputFormat": "json",
-  "systemPrompt": "<full system prompt for the worker>",
-  "userTemplate": "<user-message template with {{placeholders}}>"
-}
-
-STRICT FORMATTING
-- Every string is valid JSON (escape quotes, backslashes, newlines as \\n).
-- No code fences. No prose outside the JSON object.`;
+  if (_synthesizerPromptCache) return _synthesizerPromptCache;
+  try {
+    _synthesizerPromptCache = fs.readFileSync(SYNTHESIZER_PROMPT_PATH, "utf8");
+  } catch (err) {
+    throw new Error(
+      `Synthesizer prompt file not found at ${SYNTHESIZER_PROMPT_PATH}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
+  }
+  return _synthesizerPromptCache;
 }
 
 function buildSynthesizerUserPrompt(
