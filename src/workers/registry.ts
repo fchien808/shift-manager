@@ -22,11 +22,40 @@ const WORKERS_DIR = path.join(process.cwd(), "data", "workers");
 
 /**
  * On Vercel, the function filesystem is read-only (except /tmp, which is
- * ephemeral). Skip disk persistence entirely in that environment — seeds
- * come from the compiled bundle and synthesized workers live in memory for
- * the warm Lambda's lifetime, which is sufficient for a demo shift.
+ * ephemeral). Disk persistence is skipped; instead, synthesized workers are
+ * persisted to Redis (if configured) so they survive cold starts and are
+ * available to future shifts.
  */
-const PERSIST_TO_DISK = process.env.VERCEL !== "1";
+const ON_VERCEL = process.env.VERCEL === "1";
+const PERSIST_TO_DISK = !ON_VERCEL;
+
+/**
+ * Redis persistence for synthesized workers on Vercel. We lazily import
+ * ioredis to avoid issues when Redis isn't configured (local dev).
+ */
+const REDIS_WORKER_PREFIX = "worker:spec:";
+
+let _redisClient: import("ioredis").default | null | undefined;
+async function getRedis(): Promise<import("ioredis").default | null> {
+  if (_redisClient !== undefined) return _redisClient;
+  const url = process.env.REDIS_URL;
+  if (!url) {
+    _redisClient = null;
+    return null;
+  }
+  try {
+    const { default: Redis } = await import("ioredis");
+    _redisClient = new Redis(url, {
+      maxRetriesPerRequest: 2,
+      connectTimeout: 5000,
+      tls: url.startsWith("rediss://") ? {} : undefined,
+    });
+    return _redisClient;
+  } catch {
+    _redisClient = null;
+    return null;
+  }
+}
 
 class WorkerRegistry {
   private specs = new Map<string, WorkerSpec>();
@@ -41,6 +70,10 @@ class WorkerRegistry {
     // 2. Disk overrides / additions (skipped on Vercel).
     if (!PERSIST_TO_DISK) {
       this.loaded = true;
+      // Kick off async Redis load — fills in synthesized workers from
+      // previous shifts. Callers that need the full catalog (planner)
+      // should call `await ensureReady()` before reading.
+      this.redisLoadPromise = this.loadFromRedis();
       return;
     }
     try {
@@ -62,6 +95,50 @@ class WorkerRegistry {
       console.warn("[registry] disk load failed:", e);
     }
     this.loaded = true;
+  }
+
+  /** Load synthesized workers from Redis into the in-memory map. */
+  private async loadFromRedis(): Promise<void> {
+    try {
+      const redis = await getRedis();
+      if (!redis) return;
+      const keys = await redis.keys(`${REDIS_WORKER_PREFIX}*`);
+      if (keys.length === 0) return;
+      const pipe = redis.pipeline();
+      for (const k of keys) pipe.get(k);
+      const results = await pipe.exec();
+      if (!results) return;
+      let count = 0;
+      for (const [err, raw] of results) {
+        if (err || typeof raw !== "string") continue;
+        try {
+          const spec = JSON.parse(raw) as WorkerSpec;
+          if (spec && typeof spec.id === "string") {
+            this.specs.set(spec.id, spec);
+            count++;
+          }
+        } catch {
+          // skip malformed entries
+        }
+      }
+      if (count > 0) {
+        console.log(`[registry] loaded ${count} synthesized worker(s) from Redis`);
+      }
+    } catch (e) {
+      console.warn("[registry] Redis load failed:", e);
+    }
+  }
+
+  private redisLoadPromise: Promise<void> | null = null;
+
+  /**
+   * Async version of ensureLoaded that waits for Redis to finish loading.
+   * Call this before any operation that needs synthesized workers from
+   * previous shifts (e.g. the planner building the catalog).
+   */
+  async ensureReady(): Promise<void> {
+    this.ensureLoaded();
+    if (this.redisLoadPromise) await this.redisLoadPromise;
   }
 
   get(id: string): WorkerSpec | undefined {
@@ -116,16 +193,38 @@ class WorkerRegistry {
   saveSpec(spec: WorkerSpec): void {
     this.ensureLoaded();
     this.specs.set(spec.id, spec);
-    if (!PERSIST_TO_DISK) return;
+    if (PERSIST_TO_DISK) {
+      try {
+        fs.mkdirSync(WORKERS_DIR, { recursive: true });
+        fs.writeFileSync(
+          path.join(WORKERS_DIR, `${spec.id}.json`),
+          JSON.stringify(spec, null, 2),
+          "utf8"
+        );
+      } catch (e) {
+        console.warn(`[registry] failed to persist ${spec.id} to disk:`, e);
+      }
+    }
+    // On Vercel (or whenever Redis is available), persist non-seed specs to
+    // Redis so they survive cold starts and are available to future shifts.
+    if (spec.createdBy !== "seed") {
+      void this.saveToRedis(spec);
+    }
+  }
+
+  private async saveToRedis(spec: WorkerSpec): Promise<void> {
     try {
-      fs.mkdirSync(WORKERS_DIR, { recursive: true });
-      fs.writeFileSync(
-        path.join(WORKERS_DIR, `${spec.id}.json`),
-        JSON.stringify(spec, null, 2),
-        "utf8"
+      const redis = await getRedis();
+      if (!redis) return;
+      // 30-day TTL so stale synthesized workers are eventually cleaned up.
+      await redis.set(
+        `${REDIS_WORKER_PREFIX}${spec.id}`,
+        JSON.stringify(spec),
+        "EX",
+        60 * 60 * 24 * 30
       );
     } catch (e) {
-      console.warn(`[registry] failed to persist ${spec.id}:`, e);
+      console.warn(`[registry] failed to persist ${spec.id} to Redis:`, e);
     }
   }
 

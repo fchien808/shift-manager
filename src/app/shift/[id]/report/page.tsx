@@ -73,9 +73,12 @@ export default function ReportPage({ params }: { params: { id: string } }) {
 
   // Collect outputs from non-core workers (synthesized via Phase C or added
   // as planning-time worker calls). These are surfaced as Extra Insights.
+  // Prefer state.plan (the final plan after any re-planning) over the
+  // top-level plan (which may be the original pre-synthesis plan).
   const extraInsights: ExtraInsight[] = [];
-  if (data.plan && data.state) {
-    for (const task of data.plan.tasks) {
+  const activePlan = data.state?.plan ?? data.plan;
+  if (activePlan && data.state) {
+    for (const task of activePlan.tasks) {
       if (CORE_WORKER_IDS.has(task.workerId)) continue;
       const result = data.state.results[task.id];
       if (!result || result.status !== "completed" || result.output == null) continue;

@@ -181,6 +181,11 @@ export async function planShift(
   usage: TokenUsage[];
   artifacts: PlanningArtifact[];
 }> {
+  // Wait for the registry to finish loading synthesized workers from
+  // Redis (on Vercel) so the planner catalog includes workers from
+  // previous shifts, not just seed workers.
+  await workerRegistry.ensureReady();
+
   const systemPrompt = buildPlannerSystemPrompt();
   const tools = [buildRunWorkerTool()];
 

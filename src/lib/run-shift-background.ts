@@ -98,6 +98,14 @@ export function runShiftToCompletion(
         onEvent,
       });
 
+      // If the supervisor re-planned after synthesizing new workers, the
+      // active plan on `state` will differ from the original. Sync it back
+      // to the store so the report page sees the final plan (including any
+      // synthesized worker tasks like competitor-research or gtm-strategy).
+      if (state.plan && state.plan !== plan) {
+        await store.setPlan(shiftId, state.plan);
+      }
+
       await store.markDone(
         shiftId,
         state,
